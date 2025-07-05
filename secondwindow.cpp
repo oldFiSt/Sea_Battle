@@ -1,12 +1,14 @@
 #include "secondwindow.h"
 #include "ui_secondwindow.h"
 #include "battlewindow.h"
+#include "mainwindow.h"
 
 #include <QMessageBox>
 #include <QPushButton>
+#include <algorithm>
 
 SecondWindow::SecondWindow(QWidget *parent)
-    : QDialog(parent), ui(new Ui::SecondWindow)
+    : QDialog(parent), ui(new Ui::SecondWindow), currentShipSize(0)
 {
     ui->setupUi(this);
 
@@ -68,14 +70,12 @@ void SecondWindow::handleCellClick()
     int row = btn->property("row").toInt();
     int col = btn->property("col").toInt();
 
-    // Проверяем, что новая точка соответствует текущему кораблю
     if (!currentPlacement.isEmpty()) {
         bool valid = false;
         QPoint last = currentPlacement.last();
 
-        // Проверяем соседство по горизонтали или вертикали
-        if ((abs(row - last.x()) == 1 && col == last.y()) ||
-            (abs(col - last.y()) == 1 && row == last.x())) {
+        if ((std::abs(row - last.x()) == 1 && col == last.y()) ||
+            (std::abs(col - last.y()) == 1 && row == last.x())) {
             valid = true;
         }
 
@@ -130,18 +130,15 @@ void SecondWindow::updateShipCountDisplay()
 
 bool SecondWindow::isValidShipPlacement(const QList<QPoint>& ship)
 {
-    // Для однопалубных кораблей проверяем только соседство
     if (ship.size() == 1) {
         return !isAdjacentToAnotherShip(ship);
     }
 
-    // Для многопалубных кораблей проверяем непрерывность
     QList<QPoint> sorted = ship;
     std::sort(sorted.begin(), sorted.end(), [](const QPoint &a, const QPoint &b) {
         return a.x() == b.x() ? a.y() < b.y() : a.x() < b.x();
     });
 
-    // Проверяем, что все точки находятся на одной линии
     bool isVertical = true, isHorizontal = true;
     int firstRow = sorted[0].x(), firstCol = sorted[0].y();
 
@@ -152,14 +149,13 @@ bool SecondWindow::isValidShipPlacement(const QList<QPoint>& ship)
 
     if (!isVertical && !isHorizontal) return false;
 
-    // Проверяем, что точки идут подряд без разрывов
     if (isHorizontal) {
         for (int i = 1; i < sorted.size(); ++i) {
             if (sorted[i].y() != sorted[i-1].y() + 1) {
                 return false;
             }
         }
-    } else { // isVertical
+    } else {
         for (int i = 1; i < sorted.size(); ++i) {
             if (sorted[i].x() != sorted[i-1].x() + 1) {
                 return false;
@@ -167,7 +163,6 @@ bool SecondWindow::isValidShipPlacement(const QList<QPoint>& ship)
         }
     }
 
-    // Проверяем соседство с другими кораблями
     return !isAdjacentToAnotherShip(ship);
 }
 
@@ -198,7 +193,9 @@ void SecondWindow::startBattle()
         return;
     }
 
-    BattleWindow* battle = new BattleWindow(allPlacedShips, this);
+    MainWindow* mainWindow = qobject_cast<MainWindow*>(parent());
+
+    BattleWindow* battle = new BattleWindow(allPlacedShips, mainWindow, this);
     battle->show();
     this->hide();
 }

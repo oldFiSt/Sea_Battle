@@ -3,12 +3,14 @@
 
 #include <QDialog>
 #include <QGridLayout>
-#include "secondwindow.h" // Убедитесь, что путь правильный
 #include <QPushButton>
 #include <QList>
 #include <QTimer>
 #include <QVector>
 #include <QPoint>
+
+class MainWindow;
+class SecondWindow;
 
 namespace Ui {
 class BattleWindow;
@@ -19,35 +21,37 @@ class BattleWindow : public QDialog
     Q_OBJECT
 
 public:
-    explicit BattleWindow(const QList<QList<QPoint>>& playerShipsGroups, QWidget *parent = nullptr);
+    explicit BattleWindow(const QList<QList<QPoint>>& playerShipsGroups, MainWindow* mainWindow, QWidget *parent = nullptr);
     ~BattleWindow();
+
+private slots:
+    void on_btnExitToMainMenu_clicked();
 
 private:
     Ui::BattleWindow *ui;
-
-    int playerShipsAlive;
-    int enemyShipsAlive;
-
+    MainWindow* mainWindowPtr;
 
     QGridLayout* playerGridLayout;
     QGridLayout* enemyGridLayout;
-
-    friend class TestBattleWindow;
-
     QPushButton* playerField[10][10];
     QPushButton* enemyField[10][10];
 
-    void markPlayerDestroyedShip(const QList<QPoint>& ship);
-    void checkPlayerShipDestroyed(QPoint hitPoint);
     QList<QList<QPoint>> playerShipsGrouped;
     QList<QList<QPoint>> playerShipsGroupedFOREVER;
     QList<QList<QPoint>> enemyShipsGrouped;
     QList<QList<QPoint>> enemyShipsGroupedFOREVER;
     QList<QPoint> playerShips;
 
-    bool playerTurn;
     QTimer* botTimer;
     bool hitStatus[10][10];
+
+    int playerShipsAlive;
+    int enemyShipsAlive;
+    bool playerTurn;
+
+    QPoint lastHitPoint;
+    QVector<QPoint> targetQueue;
+    bool botHuntingMode;
 
     void setupFields();
     void placePlayerShips();
@@ -56,11 +60,8 @@ private:
     void checkAndHandleDestroyedShip(QPoint hitPoint);
     void markSurroundingArea(const QList<QPoint>& ship);
     void botShoot();
-
-    // 👇 Добавлено для умного ИИ
-    QPoint lastHitPoint;                // Последнее попадание по кораблю
-    QVector<QPoint> targetQueue;        // Очередь клеток для прицельного добивания
-    bool botHuntingMode = false;        // Активен ли режим охоты
+    void markPlayerDestroyedShip(const QList<QPoint>& ship);
+    void checkPlayerShipDestroyed(QPoint hitPoint);
 };
 
 #endif // BATTLEWINDOW_H

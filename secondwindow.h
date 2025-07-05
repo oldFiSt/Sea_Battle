@@ -6,6 +6,8 @@
 #include <QPoint>
 #include <QPushButton>
 
+class MainWindow;
+
 namespace Ui {
 class SecondWindow;
 }
@@ -29,11 +31,11 @@ private slots:
 private:
     Ui::SecondWindow *ui;
     QPushButton* gridButtons[10][10];
-    int currentShipSize = 0;
+    int currentShipSize;
     QList<QPoint> currentPlacement;
-    QList<QList<QPoint>> allPlacedShips;  // Убедитесь, что это QList<QList<QPoint>>
-    int shipsPlaced[5]; // Индекс 1-4 соответствует размеру корабля
-    const int maxShips[5] = {0, 4, 3, 2, 1}; // Максимальное количество кораблей каждого размера
+    QList<QList<QPoint>> allPlacedShips;
+    int shipsPlaced[5];
+    const int maxShips[5] = {0, 4, 3, 2, 1};
 
     void initializeShipCounts();
     void selectShip(int size);

@@ -1,34 +1,45 @@
 #include "battlewindow.h"
 #include "ui_battlewindow.h"
+#include "mainwindow.h"
+#include "secondwindow.h"
 #include <QRandomGenerator>
 #include <QDebug>
 #include <QMessageBox>
 #include <QSet>
+#include <algorithm>
 
-BattleWindow::BattleWindow(const QList<QList<QPoint>>& playerShipsGroups, QWidget *parent)
-    : QDialog(parent), ui(new Ui::BattleWindow), playerTurn(true)
+BattleWindow::BattleWindow(const QList<QList<QPoint>>& playerShipsGroups, MainWindow* mainWindow, QWidget *parent)
+    : QDialog(parent),
+    ui(new Ui::BattleWindow),
+    mainWindowPtr(mainWindow),
+    playerGridLayout(nullptr),
+    enemyGridLayout(nullptr),
+    botTimer(nullptr),
+    playerShipsAlive(0),
+    enemyShipsAlive(0),
+    playerTurn(true),
+    botHuntingMode(false)
 {
     ui->setupUi(this);
 
-    // Создаем QGridLayout и привязываем к QWidget-контейнерам из UI
     playerGridLayout = new QGridLayout(ui->gridLayoutPlayer);
     enemyGridLayout = new QGridLayout(ui->gridLayoutEnemy);
 
-    // Настройки сетки (по желанию)
     playerGridLayout->setContentsMargins(0, 0, 0, 0);
     playerGridLayout->setSpacing(1);
     enemyGridLayout->setContentsMargins(0, 0, 0, 0);
     enemyGridLayout->setSpacing(1);
 
-    // Скрываем кнопку "Сыграть снова" до окончания игры
     ui->btnReplay->setVisible(false);
+    ui->btnExitToMainMenu->setVisible(false);
 
-    // Подключение обработчика нажатия на кнопку
     connect(ui->btnReplay, &QPushButton::clicked, this, [=]() {
         this->close();
-        SecondWindow* window = new SecondWindow(); // или передать через сигнал
+        SecondWindow* window = new SecondWindow();
         window->show();
     });
+
+    connect(ui->btnExitToMainMenu, &QPushButton::clicked, this, &BattleWindow::on_btnExitToMainMenu_clicked);
 
     playerShipsGrouped = playerShipsGroups;
     playerShipsGroupedFOREVER = playerShipsGroups;
@@ -39,7 +50,7 @@ BattleWindow::BattleWindow(const QList<QList<QPoint>>& playerShipsGroups, QWidge
 
     setupFields();
     playerShipsAlive = playerShipsGroupedFOREVER.size();
-    enemyShipsAlive = 10; // Противник всегда с 10 кораблями
+    enemyShipsAlive = 10;
 
     ui->labelPlayerShips->setText("Ваши корабли: " + QString::number(playerShipsAlive));
     ui->labelEnemyShips->setText("Корабли противника: " + QString::number(enemyShipsAlive));
@@ -52,10 +63,17 @@ BattleWindow::BattleWindow(const QList<QList<QPoint>>& playerShipsGroups, QWidge
     connect(botTimer, &QTimer::timeout, this, &BattleWindow::botShoot);
 }
 
-
 BattleWindow::~BattleWindow()
 {
     delete ui;
+}
+
+void BattleWindow::on_btnExitToMainMenu_clicked()
+{
+    this->close();
+    if (mainWindowPtr) {
+        mainWindowPtr->show();
+    }
 }
 
 void BattleWindow::setupFields()
@@ -130,7 +148,7 @@ void BattleWindow::placeEnemyShipsRandomly()
 
             if (isValidEnemyShipPlacement(newShip)) {
                 enemyShipsGrouped.append(newShip);
-                enemyShipsGroupedFOREVER.append(newShip); //foreverState
+                enemyShipsGroupedFOREVER.append(newShip);
 
                 for (const QPoint& pt : newShip) {
                     enemyField[pt.x()][pt.y()]->setProperty("hasShip", true);
@@ -167,8 +185,8 @@ bool BattleWindow::isValidEnemyShipPlacement(const QList<QPoint>& ship)
     int y0 = sorted[0].y();
 
     for (const QPoint& pt : sorted) {
-        if (pt.x() != x0) isVertical = false;
-        if (pt.y() != y0) isHorizontal = false;
+        if (pt.x() != x0) isHorizontal = false;
+        if (pt.y() != y0) isVertical = false;
     }
 
     if (!isVertical && !isHorizontal) return false;
@@ -199,12 +217,12 @@ bool BattleWindow::isValidEnemyShipPlacement(const QList<QPoint>& ship)
 void BattleWindow::checkAndHandleDestroyedShip(QPoint hitPoint)
 {
     bool shipDestroyed = false;
-    bool keepPlayerTurn = false; // Переименовано для ясности
+    bool keepPlayerTurn = false;
 
     for (int i = 0; i < enemyShipsGrouped.size(); ++i) {
         QList<QPoint>& ship = enemyShipsGrouped[i];
         if (ship.contains(hitPoint)) {
-            keepPlayerTurn = true; // Игрок продолжает ход после попадания
+            keepPlayerTurn = true;
 
             ship.removeOne(hitPoint);
             enemyField[hitPoint.x()][hitPoint.y()]->setStyleSheet("background-color: red;");
@@ -224,11 +242,11 @@ void BattleWindow::checkAndHandleDestroyedShip(QPoint hitPoint)
 
     if (enemyShipsGrouped.isEmpty()) {
         QMessageBox::information(this, "Победа", "Вы уничтожили все корабли противника!");
-        ui->btnReplay->setVisible(true); // Показать кнопку
+        ui->btnReplay->setVisible(true);
+        ui->btnExitToMainMenu->setVisible(true);
         return;
     }
 
-    // Передаем ход боту только если игрок промахнулся
     if (!keepPlayerTurn) {
         playerTurn = false;
         botTimer->start();
@@ -237,35 +255,26 @@ void BattleWindow::checkAndHandleDestroyedShip(QPoint hitPoint)
 
 void BattleWindow::markSurroundingArea(const QList<QPoint>& ship)
 {
-    QSet<QPoint> processed; // Множество для отслеживания уже обработанных клеток
+    QSet<QPoint> processed;
 
-    // Для каждой клетки корабля
     for (const QPoint& pt : ship) {
+        for (int dr = -1; dr <= 1; ++dr) {
+            for (int dc = -1; dc <= 1; ++dc) {
+                int nr = pt.x() + dr;
+                int nc = pt.y() + dc;
 
-        // Проверяем все соседние клетки вокруг каждой клетки корабля
-        for (int dr = -1; dr <= 1; ++dr) {  // Проход по строкам
-            for (int dc = -1; dc <= 1; ++dc) {  // Проход по столбцам
-                int nr = pt.x() + dr; // Номер строки соседней клетки
-                int nc = pt.y() + dc; // Номер столбца соседней клетки
-
-                // Проверяем, что клетка находится в пределах поля
-                if ((nr >= 0 && nr < 10 && nc >= 0 && nc < 10)) {
+                if (nr >= 0 && nr < 10 && nc >= 0 && nc < 10) {
                     QPoint neighbor(nr, nc);
 
-                    // Если клетка еще не была обработана
                     if (!processed.contains(neighbor)) {
                         processed.insert(neighbor);
 
-                        // Проверяем, есть ли в соседней клетке корабль
                         QPushButton* btn = enemyField[nr][nc];
                         bool isShip = btn->property("hasShip").toBool();
 
-                        // Если это не корабельная клетка, обновляем её как пустую
                         if (!isShip) {
-                            btn->setStyleSheet("background-color: white;");// за разрушенную зону
+                            btn->setStyleSheet("background-color: white;");
                             btn->setEnabled(false);
-
-                            // Обновляем hitStatus на false
                             hitStatus[nr][nc] = false;
                         }
                     }
@@ -275,17 +284,13 @@ void BattleWindow::markSurroundingArea(const QList<QPoint>& ship)
     }
 }
 
-
-
 void BattleWindow::botShoot()
 {
     QPoint target;
 
-    // Если бот в режиме охоты — стреляем по очереди в соседей
     if (botHuntingMode && !targetQueue.isEmpty()) {
         target = targetQueue.takeFirst();
     } else {
-        // Режим случайного выстрела
         for (int attempt = 0; attempt < 100; ++attempt) {
             int row = QRandomGenerator::global()->bounded(10);
             int col = QRandomGenerator::global()->bounded(10);
@@ -299,7 +304,6 @@ void BattleWindow::botShoot()
         }
     }
 
-    // Стреляем по выбранной клетке
     QPushButton* cell = playerField[target.x()][target.y()];
     bool hit = cell->property("hasShip").toBool();
 
@@ -308,7 +312,6 @@ void BattleWindow::botShoot()
         cell->setEnabled(false);
         checkPlayerShipDestroyed(target);
 
-        // Проверка на победу
         bool allShipsDestroyed = true;
         for (const auto& ship : playerShipsGrouped) {
             if (!ship.isEmpty()) {
@@ -319,15 +322,14 @@ void BattleWindow::botShoot()
 
         if (allShipsDestroyed) {
             QMessageBox::information(this, "Поражение", "Все ваши корабли уничтожены!");
-            ui->btnReplay->setVisible(true); // Показать кнопку
+            ui->btnReplay->setVisible(true);
+            ui->btnExitToMainMenu->setVisible(true);
             return;
         }
 
-        // Режим охоты: продолжаем искать соседние клетки
         lastHitPoint = target;
         botHuntingMode = true;
 
-        // Добавляем соседние клетки в очередь (если еще не были добавлены)
         QVector<QPoint> directions = {
             QPoint(-1, 0), QPoint(1, 0), QPoint(0, -1), QPoint(0, 1)
     };
@@ -346,21 +348,17 @@ void BattleWindow::botShoot()
     }
 
 } else {
-    // Промах
     cell->setStyleSheet("background-color: white;");
     cell->setEnabled(false);
 }
 
-// Если закончилась очередь — выходим из режима охоты
 if (targetQueue.isEmpty()) {
     botHuntingMode = false;
 }
 
-// Завершаем ход и передаём игроку
 playerTurn = true;
 botTimer->stop();
 }
-
 
 void BattleWindow::checkPlayerShipDestroyed(QPoint hitPoint)
 {
