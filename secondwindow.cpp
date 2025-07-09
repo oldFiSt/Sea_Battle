@@ -10,6 +10,7 @@
 SecondWindow::SecondWindow(QWidget *parent)
     : QDialog(parent), ui(new Ui::SecondWindow), currentShipSize(0)
 {
+    setFixedSize(944, 600);
     ui->setupUi(this);
 
     for (int row = 0; row < 10; ++row) {

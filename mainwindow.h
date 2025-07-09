@@ -5,6 +5,7 @@
 
 class SecondWindow;
 class FriendWindow;
+class ConnectWindow;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -29,5 +30,6 @@ private:
     Ui::MainWindow *ui;
     SecondWindow *secondWindow;
     FriendWindow *friendWindow;
+    ConnectWindow *connectWindow;
 };
 #endif // MAINWINDOW_H

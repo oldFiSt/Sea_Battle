@@ -20,6 +20,7 @@ BattleWindow::BattleWindow(const QList<QList<QPoint>>& playerShipsGroups, MainWi
     playerTurn(true),
     botHuntingMode(false)
 {
+    setFixedSize(900, 650);
     ui->setupUi(this);
 
     playerGridLayout = new QGridLayout(ui->gridLayoutPlayer);

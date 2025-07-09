@@ -8,6 +8,7 @@ FriendWindow::FriendWindow(QWidget *parent) :
     player1ShipsAlive(10),
     player2ShipsAlive(10)
 {
+    setFixedSize(900, 700);
     ui->setupUi(this);
 
     player1GridLayout = new QGridLayout(ui->gridLayoutPlayer1);
