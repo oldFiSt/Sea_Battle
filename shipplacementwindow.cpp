@@ -1,14 +1,14 @@
-#include "secondwindow.h"
-#include "ui_secondwindow.h"
-#include "battlewindow.h"
-#include "mainwindow.h"
+#include "shipplacementwindow.h"
+#include "ui_shipplacementwindow.h"
 
 #include <QMessageBox>
-#include <QPushButton>
 #include <algorithm>
+#include <QLabel> // <-- Добавлен инклюд
 
-SecondWindow::SecondWindow(QWidget *parent)
-    : QDialog(parent), ui(new Ui::SecondWindow), currentShipSize(0)
+ShipPlacementWindow::ShipPlacementWindow(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::ShipPlacementWindow),
+    currentShipSize(0)
 {
     setFixedSize(944, 600);
     ui->setupUi(this);
@@ -20,28 +20,29 @@ SecondWindow::SecondWindow(QWidget *parent)
             gridButtons[row][col]->setProperty("row", row);
             gridButtons[row][col]->setProperty("col", col);
             gridButtons[row][col]->setProperty("occupied", false);
+            gridButtons[row][col]->setProperty("isCell", true);
 
-            connect(gridButtons[row][col], &QPushButton::clicked, this, &SecondWindow::handleCellClick);
+            connect(gridButtons[row][col], &QPushButton::clicked, this, &ShipPlacementWindow::handleCellClick);
             ui->gridLayoutField->addWidget(gridButtons[row][col], row, col);
         }
     }
 
-    connect(ui->btnShip1, &QPushButton::clicked, this, &SecondWindow::selectShip1);
-    connect(ui->btnShip2, &QPushButton::clicked, this, &SecondWindow::selectShip2);
-    connect(ui->btnShip3, &QPushButton::clicked, this, &SecondWindow::selectShip3);
-    connect(ui->btnShip4, &QPushButton::clicked, this, &SecondWindow::selectShip4);
-    connect(ui->btnStartBattle, &QPushButton::clicked, this, &SecondWindow::startBattle);
-    connect(ui->btnBackToMainMenu, &QPushButton::clicked, this, &SecondWindow::returnToMainMenu);
+    connect(ui->btnShip1, &QPushButton::clicked, this, &ShipPlacementWindow::selectShip1);
+    connect(ui->btnShip2, &QPushButton::clicked, this, &ShipPlacementWindow::selectShip2);
+    connect(ui->btnShip3, &QPushButton::clicked, this, &ShipPlacementWindow::selectShip3);
+    connect(ui->btnShip4, &QPushButton::clicked, this, &ShipPlacementWindow::selectShip4);
+    connect(ui->btnStartBattle, &QPushButton::clicked, this, &ShipPlacementWindow::onStartBattleClicked);
+    connect(ui->btnBackToMainMenu, &QPushButton::clicked, this, &ShipPlacementWindow::onBackClicked);
 
     initializeShipCounts();
 }
 
-SecondWindow::~SecondWindow()
+ShipPlacementWindow::~ShipPlacementWindow()
 {
     delete ui;
 }
 
-void SecondWindow::initializeShipCounts()
+void ShipPlacementWindow::initializeShipCounts()
 {
     shipsPlaced[1] = 0;
     shipsPlaced[2] = 0;
@@ -50,19 +51,19 @@ void SecondWindow::initializeShipCounts()
     updateShipCountDisplay();
 }
 
-void SecondWindow::selectShip(int size)
+void ShipPlacementWindow::selectShip(int size)
 {
     currentShipSize = size;
     currentPlacement.clear();
     QMessageBox::information(this, "Выбор корабля", QString("Вы выбрали %1-палубный корабль").arg(size));
 }
 
-void SecondWindow::selectShip1() { selectShip(1); }
-void SecondWindow::selectShip2() { selectShip(2); }
-void SecondWindow::selectShip3() { selectShip(3); }
-void SecondWindow::selectShip4() { selectShip(4); }
+void ShipPlacementWindow::selectShip1() { selectShip(1); }
+void ShipPlacementWindow::selectShip2() { selectShip(2); }
+void ShipPlacementWindow::selectShip3() { selectShip(3); }
+void ShipPlacementWindow::selectShip4() { selectShip(4); }
 
-void SecondWindow::handleCellClick()
+void ShipPlacementWindow::handleCellClick()
 {
     if (currentShipSize == 0) return;
 
@@ -113,7 +114,7 @@ void SecondWindow::handleCellClick()
     }
 }
 
-void SecondWindow::resetCurrentPlacement()
+void ShipPlacementWindow::resetCurrentPlacement()
 {
     for (const QPoint& point : currentPlacement) {
         gridButtons[point.x()][point.y()]->setStyleSheet("background-color: lightblue;");
@@ -122,7 +123,7 @@ void SecondWindow::resetCurrentPlacement()
     currentPlacement.clear();
 }
 
-void SecondWindow::updateShipCountDisplay()
+void ShipPlacementWindow::updateShipCountDisplay()
 {
     ui->labelShip1Count->setText(QString("1-палубные: %1/4").arg(shipsPlaced[1]));
     ui->labelShip2Count->setText(QString("2-палубные: %1/3").arg(shipsPlaced[2]));
@@ -130,49 +131,38 @@ void SecondWindow::updateShipCountDisplay()
     ui->labelShip4Count->setText(QString("4-палубные: %1/1").arg(shipsPlaced[4]));
 }
 
-bool SecondWindow::isValidShipPlacement(const QList<QPoint>& ship)
+bool ShipPlacementWindow::isValidShipPlacement(const QList<QPoint>& ship)
 {
     if (ship.size() == 1) {
         return !isAdjacentToAnotherShip(ship);
     }
-
     QList<QPoint> sorted = ship;
     std::sort(sorted.begin(), sorted.end(), [](const QPoint &a, const QPoint &b) {
         return a.x() == b.x() ? a.y() < b.y() : a.x() < b.x();
     });
-
     bool isVertical = true, isHorizontal = true;
     int firstRow = sorted[0].x(), firstCol = sorted[0].y();
-
     for (int i = 1; i < sorted.size(); ++i) {
         if (sorted[i].x() != firstRow) isHorizontal = false;
         if (sorted[i].y() != firstCol) isVertical = false;
     }
-
     if (!isVertical && !isHorizontal) return false;
-
     if (isHorizontal) {
         for (int i = 1; i < sorted.size(); ++i) {
-            if (sorted[i].y() != sorted[i-1].y() + 1) {
-                return false;
-            }
+            if (sorted[i].y() != sorted[i-1].y() + 1) return false;
         }
     } else {
         for (int i = 1; i < sorted.size(); ++i) {
-            if (sorted[i].x() != sorted[i-1].x() + 1) {
-                return false;
-            }
+            if (sorted[i].x() != sorted[i-1].x() + 1) return false;
         }
     }
-
     return !isAdjacentToAnotherShip(ship);
 }
 
-bool SecondWindow::isAdjacentToAnotherShip(const QList<QPoint>& ship)
+bool ShipPlacementWindow::isAdjacentToAnotherShip(const QList<QPoint>& ship)
 {
     for (const QPoint& point : ship) {
         int row = point.x(), col = point.y();
-
         for (int i = -1; i <= 1; ++i) {
             for (int j = -1; j <= 1; ++j) {
                 int newRow = row + i, newCol = col + j;
@@ -188,24 +178,47 @@ bool SecondWindow::isAdjacentToAnotherShip(const QList<QPoint>& ship)
     return false;
 }
 
-void SecondWindow::startBattle()
+void ShipPlacementWindow::onStartBattleClicked()
 {
     if (shipsPlaced[1] != 4 || shipsPlaced[2] != 3 || shipsPlaced[3] != 2 || shipsPlaced[4] != 1) {
         QMessageBox::warning(this, "Ошибка", "Сначала расставьте все корабли!");
         return;
     }
 
-    MainWindow* mainWindow = qobject_cast<MainWindow*>(parent());
+    // ИЗМЕНЕНИЕ: Не скрываем окно, а показываем статус ожидания
+    // и блокируем интерфейс, чтобы нельзя было ничего поменять.
+    // Сигнал будет отправлен, а MainWindow решит, когда начинать бой.
 
-    BattleWindow* battle = new BattleWindow(allPlacedShips, mainWindow, this);
-    battle->show();
-    this->hide();
+    ui->btnStartBattle->setEnabled(false);
+    ui->btnBackToMainMenu->setEnabled(false);
+    ui->groupBox->setEnabled(false);
+
+    // Блокируем поле
+    for (int row = 0; row < 10; ++row) {
+        for (int col = 0; col < 10; ++col) {
+            gridButtons[row][col]->setEnabled(false);
+        }
+    }
+
+    // Добавляем надпись об ожидании
+    QLabel* waitingLabel = new QLabel("Ожидание второго игрока...", this);
+    waitingLabel->setStyleSheet("font-size: 18px; color: #d4af37; font-weight: bold; background-color: rgba(0,0,0,0.5); border-radius: 8px; padding: 10px;");
+    waitingLabel->setAlignment(Qt::AlignCenter);
+
+    // Позиционируем надпись по центру виджета с кнопками
+    int x = ui->groupBox->x();
+    int y = ui->groupBox->y() + ui->groupBox->height() + 150;
+    int w = ui->groupBox->width();
+    int h = 50;
+    waitingLabel->setGeometry(x, y, w, h);
+    waitingLabel->show();
+
+    emit startGame(allPlacedShips);
+    // this->hide(); // <-- УБРАЛИ, окно скроет MainWindow, когда оба будут готовы
 }
 
-void SecondWindow::returnToMainMenu()
+void ShipPlacementWindow::onBackClicked()
 {
+    emit backToConnectWindow();
     this->hide();
-    if (parentWidget()) {
-        parentWidget()->show();
-    }
 }

@@ -9,8 +9,7 @@ class GameServer : public QObject {
     Q_OBJECT
 public:
     explicit GameServer(QObject *parent = nullptr);
-
-    void startServer(quint16 port);
+    bool startServer(quint16 port);
 
 signals:
     void twoPlayersConnected();

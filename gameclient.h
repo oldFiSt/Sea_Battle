@@ -29,6 +29,7 @@ private slots:
 
 private:
     QTcpSocket *socket;
+    QByteArray buffer; // Буфер для сообщений
 };
 
 #endif // GAMECLIENT_H

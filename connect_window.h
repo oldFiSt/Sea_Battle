@@ -4,24 +4,28 @@
 #include <QDialog>
 #include <QLabel>
 
+class GameClient;
 
 namespace Ui {
-    class ConnectWindow;
+class ConnectWindow;
 }
-
-class GameClient;
 
 class ConnectWindow : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit ConnectWindow(QWidget *parent = nullptr);
+    explicit ConnectWindow(GameClient* client, QWidget *parent = nullptr);
     ~ConnectWindow();
+
+    void disconnectFromClient();
+    void setStatusText(const QString& text);
+    void setConnectButtonEnabled(bool enabled);
 
 signals:
     void backtoMenu();
     void connectedToServer();
+    void bothPlayersReady(int playerID);
 
 private slots:
     void on_btnConnect_clicked();
@@ -29,12 +33,13 @@ private slots:
     void onTwoPlayersConnected();
     void onConnected();
     void onDisconnected();
-    void onDataReceived(const QByteArray &data); // если нужно
+    void onDataReceived(const QByteArray &data);
 
 private:
     Ui::ConnectWindow *ui;
-    GameClient *client;
+    GameClient *m_client;
     QLabel *labelStatus;
+    int playerID;
 };
 
-#endif
+#endif // CONNECT_WINDOW_H

@@ -1,24 +1,26 @@
-#ifndef SECONDWINDOW_H
-#define SECONDWINDOW_H
+#ifndef SHIPPLACEMENTWINDOW_H
+#define SHIPPLACEMENTWINDOW_H
 
 #include <QDialog>
 #include <QList>
 #include <QPoint>
 #include <QPushButton>
 
-class MainWindow;
-
 namespace Ui {
-class SecondWindow;
+class ShipPlacementWindow;
 }
 
-class SecondWindow : public QDialog
+class ShipPlacementWindow : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit SecondWindow(QWidget *parent = nullptr);
-    ~SecondWindow();
+    explicit ShipPlacementWindow(QWidget *parent = nullptr);
+    ~ShipPlacementWindow();
+
+signals:
+    void backToConnectWindow();
+    void startGame(const QList<QList<QPoint>>& ships); // Сигнал передает корабли
 
 private slots:
     void selectShip1();
@@ -26,11 +28,11 @@ private slots:
     void selectShip3();
     void selectShip4();
     void handleCellClick();
-    void startBattle();
-    void returnToMainMenu();
+    void onStartBattleClicked();
+    void onBackClicked();
 
 private:
-    Ui::SecondWindow *ui;
+    Ui::ShipPlacementWindow *ui;
     QPushButton* gridButtons[10][10];
     int currentShipSize;
     QList<QPoint> currentPlacement;
@@ -46,4 +48,4 @@ private:
     void resetCurrentPlacement();
 };
 
-#endif // SECONDWINDOW_H
+#endif // SHIPPLACEMENTWINDOW_H

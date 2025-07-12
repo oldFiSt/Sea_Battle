@@ -22,7 +22,12 @@ void GameClient::connectToServer(const QString &host, quint16 port)
 void GameClient::sendData(const QByteArray &data)
 {
     if (socket->state() == QAbstractSocket::ConnectedState) {
-        socket->write(data);
+        // Добавляем символ новой строки для разделения сообщений
+        QByteArray newData = data;
+        if (!newData.endsWith('\n')) {
+            newData.append('\n');
+        }
+        socket->write(newData);
     } else {
         qDebug() << "Не удалось отправить данные: нет соединения.";
     }
@@ -43,16 +48,27 @@ void GameClient::onDisconnected()
 void GameClient::onSocketError(QAbstractSocket::SocketError socketError)
 {
     Q_UNUSED(socketError)
-    qDebug() << "Ошибка сокета:" << socket->errorString();
-    emit errorOccurred(socket->errorString());
+    QString error = socket->errorString();
+    qDebug() << "Ошибка сокета:" << error;
+    emit errorOccurred(error);
 }
 
 void GameClient::onReadyRead() {
-    QByteArray data = socket->readAll();
-    emit dataReceived(data);
+    buffer.append(socket->readAll());
 
-    QString msg = QString::fromUtf8(data);
-    if (msg == "both connected") {
-        emit twoPlayersConnected();
+    // Разделяем сообщения по символу новой строки
+    int pos;
+    while ((pos = buffer.indexOf('\n')) != -1) {
+        QByteArray message = buffer.left(pos);
+        buffer = buffer.mid(pos + 1);
+
+        if (!message.isEmpty()) {
+            emit dataReceived(message);
+
+            QString msg = QString::fromUtf8(message);
+            if (msg == "both connected") {
+                emit twoPlayersConnected();
+            }
+        }
     }
 }
