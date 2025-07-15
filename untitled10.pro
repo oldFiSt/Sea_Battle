@@ -1,6 +1,19 @@
 QT += core gui widgets network
 
-CONFIG += c++17
+CONFIG += c++17 warn_on release link_pkgconfig
+
+TEMPLATE = app
+TARGET = SeaBattle
+
+linux {
+    QMAKE_CXXFLAGS += -O3 -march=native -pipe -fPIC
+    QMAKE_LFLAGS += -Wl,--as-needed
+    LIBS += -lpthread
+    PKGCONFIG += libnotify
+
+    # Только если действительно используешь X11 напрямую:
+    # LIBS += -lX11 -lXext
+}
 
 SOURCES += \
     main.cpp \
@@ -37,9 +50,10 @@ FORMS += \
     hostlobbywindow.ui \
     connect_window.ui
 
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+RESOURCES += resources.qrc  # если есть иконки и т.п.
 
-RESOURCES +=
+# Установка для Linux
+unix:!android {
+    target.path = /usr/local/bin
+    INSTALLS += target
+}

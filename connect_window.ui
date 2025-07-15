@@ -73,7 +73,7 @@ QLabel#labelStatus {
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>0</y>
+     <y>20</y>
      <width>821</width>
      <height>466</height>
     </rect>
@@ -95,12 +95,15 @@ QLabel#labelStatus {
     </property>
    </widget>
    <widget class="QWidget" name="formLayoutWidget">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>220</x>
-      <y>160</y>
+      <y>130</y>
       <width>360</width>
-      <height>311</height>
+      <height>315</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout">
@@ -137,6 +140,9 @@ QLabel#labelStatus {
      </item>
      <item>
       <widget class="QLabel" name="labelStatus">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="text">
         <string>Ожидание подключения второго игрока...</string>
        </property>

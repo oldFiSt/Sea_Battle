@@ -6,6 +6,7 @@ HostLobbyWindow::HostLobbyWindow(QWidget *parent) :
     ui(new Ui::HostLobbyWindow)
 {
     ui->setupUi(this);
+    setFixedSize(900, 200);
     connect(ui->btnCancel, &QPushButton::clicked, this, &HostLobbyWindow::cancelled);
 }
 
