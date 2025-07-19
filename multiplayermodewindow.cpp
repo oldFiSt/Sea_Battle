@@ -5,7 +5,7 @@ MultiplayerModeWindow::MultiplayerModeWindow(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::MultiplayerModeWindow)
 {
-    setFixedSize(800, 588);
+    setFixedSize(450, 300);
     ui->setupUi(this);
     connect(ui->btnHost, &QPushButton::clicked, this, &MultiplayerModeWindow::hostGameClicked);
     connect(ui->btnJoin, &QPushButton::clicked, this, &MultiplayerModeWindow::joinGameClicked);

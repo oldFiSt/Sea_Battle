@@ -13,12 +13,13 @@ public:
     explicit GameClient(QObject *parent = nullptr);
     void connectToServer(const QString &host, quint16 port);
     void sendData(const QByteArray &data);
+    void disconnectFromServer(); // <-- НОВАЯ ФУНКЦИЯ
 
 signals:
-    void connected();                         // Успешное подключение
-    void disconnected();                      // Отключение от сервера
-    void dataReceived(const QByteArray &data); // Получены данные от сервера
-    void errorOccurred(const QString &error); // Ошибка подключения
+    void connected();
+    void disconnected();
+    void dataReceived(const QByteArray &data);
+    void errorOccurred(const QString &error);
     void twoPlayersConnected();
 
 private slots:
@@ -29,7 +30,7 @@ private slots:
 
 private:
     QTcpSocket *socket;
-    QByteArray buffer; // Буфер для сообщений
+    QByteArray buffer;
 };
 
 #endif // GAMECLIENT_H

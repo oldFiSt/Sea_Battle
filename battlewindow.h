@@ -23,12 +23,13 @@ class BattleWindow : public QDialog
 public:
     // Конструктор для игры с ботом
     explicit BattleWindow(const QList<QList<QPoint>>& playerShipsGroups, MainWindow* mainWindow, QWidget *parent = nullptr);
-    // Новый конструктор для сетевой игры
+    // Конструктор для сетевой игры
     explicit BattleWindow(const QList<QList<QPoint>>& playerShipsGroups, GameClient* client, int playerID, MainWindow* mainWindow, QWidget *parent = nullptr);
     ~BattleWindow();
 
 private slots:
     void on_btnExitToMainMenu_clicked();
+    void on_btnReplay_clicked(); // <-- ДОБАВЛЕН ЯВНЫЙ СЛОТ
     void botShoot();
     void handlePlayerShot();
     void handleNetworkData(const QByteArray &data);
@@ -56,13 +57,12 @@ private:
     bool isNetworkGame;
     int myPlayerID;
 
-    // --- ПЕРЕМЕННЫЕ ДЛЯ УМНОГО БОТА ---
-    QPoint lastHitPoint;        // Координаты последнего попадания для режима охоты
-    QPoint firstHitPoint;       // Координаты первого попадания в текущий корабль
-    QVector<QPoint> targetQueue;  // Очередь целей для добивания корабля
-    bool botHuntingMode;        // Флаг, указывающий, что бот находится в режиме "охоты"
-    // --- КОНЕЦ ПЕРЕМЕННЫХ ДЛЯ УМНОГО БОТА ---
+    // --- Переменные для умного бота ---
+    QPoint lastHitPoint;
+    QPoint firstHitPoint;
 
+    QVector<QPoint> targetQueue;
+    bool botHuntingMode;
 
     void setupFields();
     void placePlayerShips();

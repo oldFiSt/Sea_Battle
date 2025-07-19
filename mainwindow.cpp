@@ -9,13 +9,14 @@
 #include "multiplayermodewindow.h"
 #include "hostlobbywindow.h"
 #include "hostsetupwindow.h"
+#include "guidewindow.h"
 #include <QNetworkInterface>
 #include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , secondWindow(nullptr)
+    , secondWindow(nullptr) // Инициализируем все указатели нулем
     , connectWindow(nullptr)
     , shipPlacementWindow(nullptr)
     , battleWindow(nullptr)
@@ -24,22 +25,40 @@ MainWindow::MainWindow(QWidget *parent)
     , multiplayerModeWindow(nullptr)
     , hostLobbyWindow(nullptr)
     , hostSetupWindow(nullptr)
+    , guideWindow(nullptr)
     , playerID(0)
     , m_iAmReady(false)
     , m_opponentIsReady(false)
 {
-    setFixedSize(800, 588);
+    setFixedSize(800, 575);
     ui->setupUi(this);
-
-    connect(ui->pushButton, &QPushButton::clicked, this, &MainWindow::on_pushButton_clicked);
-    connect(ui->pushButton_2, &QPushButton::clicked, this, &MainWindow::on_pushButton_2_clicked);
-    connect(ui->btnExitToDesktop, &QPushButton::clicked, this, &MainWindow::on_btnExitToDesktop_clicked);
 }
 
-MainWindow::~MainWindow() { delete ui; }
+MainWindow::~MainWindow()
+{
+    cleanupNetwork(true);
+    cleanupGameWindows();
+    delete ui;
+}
+
+// Новый метод для очистки игровых окон
+void MainWindow::cleanupGameWindows()
+{
+    if (secondWindow) {
+        secondWindow->deleteLater();
+        secondWindow = nullptr;
+    }
+    if (battleWindow) {
+        battleWindow->deleteLater();
+        battleWindow = nullptr;
+    }
+}
 
 void MainWindow::cleanupNetwork(bool force) {
     if (gameClient) {
+        if(gameClient->property("connected").toBool()) {
+            gameClient->disconnectFromServer();
+        }
         gameClient->deleteLater();
         gameClient = nullptr;
     }
@@ -51,16 +70,54 @@ void MainWindow::cleanupNetwork(bool force) {
         connectWindow->deleteLater();
         connectWindow = nullptr;
     }
+    if (guideWindow) {
+        guideWindow->close();
+    }
     m_iAmReady = false;
     m_opponentIsReady = false;
     m_myShips.clear();
 }
 
+// Этот метод теперь вызывает наш новый централизованный метод
 void MainWindow::on_pushButton_clicked() {
+    startNewSinglePlayerGame();
+}
+
+// Новый централизованный метод для начала/рестарта одиночной игры
+void MainWindow::startNewSinglePlayerGame()
+{
     this->hide();
-    if (!secondWindow) secondWindow = new SecondWindow(this);
+    cleanupGameWindows(); // Очищаем старые окна перед созданием новых
+
+    secondWindow = new SecondWindow(this);
+    secondWindow->setAttribute(Qt::WA_DeleteOnClose);
+    connect(secondWindow, &SecondWindow::shipsPlacedAndReady, this, &MainWindow::startSinglePlayerBattle);
+    // Если окно расстановки закроют, покажем главное меню
+    connect(secondWindow, &QObject::destroyed, this, [this]() {
+        // Убедимся, что главное окно показывается, только если не начался бой
+        if (!battleWindow) {
+            this->show();
+        }
+    });
+
     secondWindow->show();
 }
+
+void MainWindow::startSinglePlayerBattle(const QList<QList<QPoint>>& ships)
+{
+    cleanupGameWindows(); // Очищаем окно расстановки
+
+    battleWindow = new BattleWindow(ships, this, this);
+    battleWindow->setAttribute(Qt::WA_DeleteOnClose);
+    connect(battleWindow, &QObject::destroyed, this, [this]() {
+        this->battleWindow = nullptr;
+    });
+
+    battleWindow->show();
+}
+
+
+// --- Остальной код без существенных изменений ---
 
 void MainWindow::on_pushButton_2_clicked()
 {
@@ -77,7 +134,6 @@ void MainWindow::on_pushButton_2_clicked()
 void MainWindow::onHostGameClicked()
 {
     multiplayerModeWindow->hide();
-
     cleanupNetwork(true);
 
     if (!hostSetupWindow) {
@@ -98,26 +154,25 @@ void MainWindow::startServerAndLobby(quint16 port)
 
     gameServer = new GameServer(this);
     gameClient = new GameClient(this);
+    gameClient->setProperty("connected", false);
 
-    // Добавлена обработка ошибок подключения
     connect(gameClient, &GameClient::errorOccurred, this, [this](const QString& error) {
         QMessageBox::critical(this, "Ошибка подключения", "Не удалось подключиться к серверу: " + error);
         if (hostLobbyWindow) hostLobbyWindow->hide();
         cleanupNetwork(true);
         hostSetupWindow->show();
     });
+    connect(gameClient, &GameClient::connected, this, [this](){ gameClient->setProperty("connected", true); });
 
-    // Проверка успешного запуска сервера
+
     if (!gameServer->startServer(port)) {
-        QMessageBox::critical(this, "Ошибка", "Не удалось запустить сервер на порту " + QString::number(port));
+        QMessageBox::critical(this, "Ошибка", "Не удалось запустить сервер на порту " + QString::number(port) + ". Возможно, порт уже занят.");
         cleanupNetwork(true);
         hostSetupWindow->show();
         return;
     }
 
     connect(gameClient, &GameClient::dataReceived, this, &MainWindow::handleNetworkData);
-
-    // Подключаемся к собственному серверу
     gameClient->connectToServer("127.0.0.1", port);
 
     if (!hostLobbyWindow) {
@@ -145,20 +200,17 @@ void MainWindow::startServerAndLobby(quint16 port)
 void MainWindow::onJoinGameClicked()
 {
     multiplayerModeWindow->hide();
-
     cleanupNetwork(true);
 
     gameClient = new GameClient(this);
-    connect(gameClient, &GameClient::errorOccurred, this, [this](const QString& error) {
-        QMessageBox::critical(this, "Ошибка подключения", "Не удалось подключиться к серверу: " + error);
-        if (connectWindow) {
-            connectWindow->setStatusText("Ошибка: " + error);
-            connectWindow->setConnectButtonEnabled(true);
-        }
-    });
     connect(gameClient, &GameClient::dataReceived, this, &MainWindow::handleNetworkData);
 
+    if (connectWindow) {
+        delete connectWindow;
+        connectWindow = nullptr;
+    }
     connectWindow = new ConnectWindow(gameClient, this);
+
     connect(connectWindow, &ConnectWindow::backtoMenu, this, [this]() {
         cleanupNetwork(true);
         multiplayerModeWindow->show();
@@ -250,6 +302,18 @@ void MainWindow::tryStartMultiplayerGame()
         battleWindow = new BattleWindow(m_myShips, gameClient, this->playerID, this, this);
         battleWindow->show();
     }
+}
+
+void MainWindow::on_btnUserGuide_clicked()
+{
+    if (!guideWindow) {
+        guideWindow = new GuideWindow(this);
+        guideWindow->setAttribute(Qt::WA_DeleteOnClose);
+        connect(guideWindow, &QObject::destroyed, this, [this](){ guideWindow = nullptr; });
+    }
+    guideWindow->show();
+    guideWindow->raise();
+    guideWindow->activateWindow();
 }
 
 void MainWindow::on_btnExitToDesktop_clicked()

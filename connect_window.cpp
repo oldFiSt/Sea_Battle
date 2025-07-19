@@ -10,7 +10,7 @@ ConnectWindow::ConnectWindow(GameClient* client, QWidget *parent)
     , m_client(client)
     , playerID(0)
 {
-    setFixedSize(800, 588);
+    setFixedSize(800, 550);
     ui->setupUi(this);
 
     labelStatus = ui->labelStatus;

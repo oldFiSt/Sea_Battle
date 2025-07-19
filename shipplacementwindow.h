@@ -20,7 +20,7 @@ public:
 
 signals:
     void backToConnectWindow();
-    void startGame(const QList<QList<QPoint>>& ships); // Сигнал передает корабли
+    void startGame(const QList<QList<QPoint>>& ships);
 
 private slots:
     void selectShip1();
@@ -30,6 +30,8 @@ private slots:
     void handleCellClick();
     void onStartBattleClicked();
     void onBackClicked();
+    void onResetShipsClicked();
+    void onAutoPlaceShipsClicked(); // <-- ДОБАВЛЕН НОВЫЙ СЛОТ
 
 private:
     Ui::ShipPlacementWindow *ui;
@@ -40,12 +42,19 @@ private:
     int shipsPlaced[5];
     const int maxShips[5] = {0, 4, 3, 2, 1};
 
+    enum ShipOrientation { UNKNOWN, HORIZONTAL, VERTICAL };
+    ShipOrientation currentOrientation;
+
     void initializeShipCounts();
     void selectShip(int size);
     void updateShipCountDisplay();
-    bool isValidShipPlacement(const QList<QPoint>& ship);
     bool isAdjacentToAnotherShip(const QList<QPoint>& ship);
     void resetCurrentPlacement();
+
+    // <-- ДОБАВЛЕНЫ ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+    void clearBoard();
+    bool autoPlaceAllShips();
+    bool isValidPlacementForAuto(const QList<QPoint>& ship);
 };
 
 #endif // SHIPPLACEMENTWINDOW_H

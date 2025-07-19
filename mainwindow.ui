@@ -85,7 +85,7 @@ QPushButton#btnExitToDesktop:pressed {
     <property name="geometry">
      <rect>
       <x>150</x>
-      <y>50</y>
+      <y>30</y>
       <width>500</width>
       <height>100</height>
      </rect>
@@ -108,9 +108,9 @@ QPushButton#btnExitToDesktop:pressed {
     <property name="geometry">
      <rect>
       <x>220</x>
-      <y>200</y>
+      <y>170</y>
       <width>361</width>
-      <height>300</height>
+      <height>374</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout">
@@ -132,6 +132,13 @@ QPushButton#btnExitToDesktop:pressed {
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="btnUserGuide">
+       <property name="text">
+        <string>Руководство пользователя</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="btnExitToDesktop">
        <property name="text">
         <string>Выход на рабочий стол</string>
@@ -147,7 +154,7 @@ QPushButton#btnExitToDesktop:pressed {
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>

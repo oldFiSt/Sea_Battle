@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/creators">
+        <file alias="photo1">creators/creator1.png</file>
+        <file alias="photo2">creators/creator2.png</file>
+    </qresource>
+</RCC>

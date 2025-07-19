@@ -9,6 +9,8 @@ class GameServer : public QObject {
     Q_OBJECT
 public:
     explicit GameServer(QObject *parent = nullptr);
+    ~GameServer(); // <-- ИСПРАВЛЕНО: Объявляем деструктор
+
     bool startServer(quint16 port);
 
 signals:

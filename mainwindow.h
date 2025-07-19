@@ -14,6 +14,7 @@ class GameClient;
 class MultiplayerModeWindow;
 class HostLobbyWindow;
 class HostSetupWindow;
+class GuideWindow;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -29,16 +30,24 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    // Сделаем этот метод публичным, чтобы BattleWindow мог его вызвать
+    void startNewSinglePlayerGame();
+
 private slots:
     void on_pushButton_clicked();
     void on_pushButton_2_clicked();
+    void on_btnUserGuide_clicked();
     void on_btnExitToDesktop_clicked();
 
+    // Для сетевой игры
     void onPlayerShipsPlaced(const QList<QList<QPoint>>& ships);
+
+    // Для одиночной игры
+    void startSinglePlayerBattle(const QList<QList<QPoint>>& ships);
 
     void onHostGameClicked();
     void onJoinGameClicked();
-    void onMultiplayerBackClicked(QWidget* senderWindow); // ИЗМЕНЕНА СИГНАТУРА
+    void onMultiplayerBackClicked(QWidget* senderWindow);
     void startServerAndLobby(quint16 port);
     void proceedToShipPlacement(int id);
 
@@ -46,6 +55,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+    // Указатели на все окна
     SecondWindow *secondWindow;
     ConnectWindow *connectWindow;
     ShipPlacementWindow *shipPlacementWindow;
@@ -55,6 +65,7 @@ private:
     MultiplayerModeWindow* multiplayerModeWindow;
     HostLobbyWindow* hostLobbyWindow;
     HostSetupWindow* hostSetupWindow;
+    GuideWindow* guideWindow;
     int playerID;
 
     QList<QList<QPoint>> m_myShips;
@@ -62,7 +73,9 @@ private:
     bool m_opponentIsReady;
 
     void tryStartMultiplayerGame();
-    void cleanupNetwork(bool force = false); // ДОБАВЛЕН МЕТОД
+    void cleanupNetwork(bool force = false);
+    // Метод для очистки игровых окон
+    void cleanupGameWindows();
 };
 
 #endif // MAINWINDOW_H

@@ -7,7 +7,7 @@ HostSetupWindow::HostSetupWindow(QWidget *parent) :
     ui(new Ui::HostSetupWindow)
 {
     ui->setupUi(this);
-    setFixedSize(400, 250);
+    setFixedSize(500, 250);
     connect(ui->btnCreate, &QPushButton::clicked, this, &HostSetupWindow::onCreateClicked);
     // ИСПРАВЛЕНИЕ ОПЕЧАТКИ
     connect(ui->btnBack, &QPushButton::clicked, this, &HostSetupWindow::backToMenu);

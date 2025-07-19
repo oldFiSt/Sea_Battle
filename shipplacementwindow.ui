@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>944</width>
-    <height>600</height>
+    <height>697</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -96,31 +96,6 @@ QPushButton#btnStartBattle:hover {
 QPushButton#btnStartBattle:pressed {
     background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                                     stop:0 #2E7D32, stop:1 #1B5E20);
-}
-
-/* Стили для игровых клеток */
-QPushButton[isCell=&quot;true&quot;] {
-    background-color: #a3c1da;
-    border: 1px solid #1e3d6b;
-    border-radius: 4px;
-    margin: 1px;
-    min-width: 30px;
-    min-height: 30px;
-    max-width: 30px;
-    max-height: 30px;
-}
-
-QPushButton[isCell=&quot;true&quot;][occupied=&quot;true&quot;] {
-    background-color: #2c3e50;
-    border-radius: 4px;
-}
-
-QPushButton[isCell=&quot;true&quot;]:hover {
-    background-color: #b8d4e7;
-}
-
-QPushButton[isCell=&quot;true&quot;]:pressed {
-    background-color: #8aa8c1;
 }
    </string>
   </property>
@@ -215,7 +190,7 @@ QPushButton[isCell=&quot;true&quot;]:pressed {
   <widget class="QLabel" name="labelShip1Count">
    <property name="geometry">
     <rect>
-     <x>30</x>
+     <x>80</x>
      <y>280</y>
      <width>200</width>
      <height>30</height>
@@ -228,7 +203,7 @@ QPushButton[isCell=&quot;true&quot;]:pressed {
   <widget class="QLabel" name="labelShip2Count">
    <property name="geometry">
     <rect>
-     <x>30</x>
+     <x>80</x>
      <y>320</y>
      <width>200</width>
      <height>30</height>
@@ -241,7 +216,7 @@ QPushButton[isCell=&quot;true&quot;]:pressed {
   <widget class="QLabel" name="labelShip3Count">
    <property name="geometry">
     <rect>
-     <x>30</x>
+     <x>80</x>
      <y>360</y>
      <width>200</width>
      <height>30</height>
@@ -254,7 +229,7 @@ QPushButton[isCell=&quot;true&quot;]:pressed {
   <widget class="QLabel" name="labelShip4Count">
    <property name="geometry">
     <rect>
-     <x>30</x>
+     <x>80</x>
      <y>400</y>
      <width>200</width>
      <height>30</height>
@@ -267,10 +242,10 @@ QPushButton[isCell=&quot;true&quot;]:pressed {
   <widget class="QWidget" name="gridLayoutWidget">
    <property name="geometry">
     <rect>
-     <x>360</x>
+     <x>339</x>
      <y>100</y>
-     <width>550</width>
-     <height>471</height>
+     <width>591</width>
+     <height>541</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayoutField">
@@ -282,8 +257,8 @@ QPushButton[isCell=&quot;true&quot;]:pressed {
   <widget class="QPushButton" name="btnStartBattle">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>470</y>
+     <x>40</x>
+     <y>440</y>
      <width>200</width>
      <height>60</height>
     </rect>
@@ -295,14 +270,40 @@ QPushButton[isCell=&quot;true&quot;]:pressed {
   <widget class="QPushButton" name="btnBackToMainMenu">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>540</y>
+     <x>40</x>
+     <y>630</y>
      <width>200</width>
      <height>50</height>
     </rect>
    </property>
    <property name="text">
     <string>Назад</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnResetShips">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>570</y>
+     <width>200</width>
+     <height>50</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Сбросить корабли</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnAutoPlaceShips">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>510</y>
+     <width>251</width>
+     <height>50</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Расставить автоматически</string>
    </property>
   </widget>
  </widget>

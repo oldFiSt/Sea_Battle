@@ -3,14 +3,18 @@
 
 #include <QMessageBox>
 #include <algorithm>
-#include <QLabel> // <-- Добавлен инклюд
+#include <QLabel>
+#include <QPushButton>
+#include <QRandomGenerator>
+
 
 ShipPlacementWindow::ShipPlacementWindow(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::ShipPlacementWindow),
-    currentShipSize(0)
+    currentShipSize(0),
+    currentOrientation(UNKNOWN)
 {
-    setFixedSize(944, 600);
+    setFixedSize(944, 697);
     ui->setupUi(this);
 
     for (int row = 0; row < 10; ++row) {
@@ -20,7 +24,6 @@ ShipPlacementWindow::ShipPlacementWindow(QWidget *parent) :
             gridButtons[row][col]->setProperty("row", row);
             gridButtons[row][col]->setProperty("col", col);
             gridButtons[row][col]->setProperty("occupied", false);
-            gridButtons[row][col]->setProperty("isCell", true);
 
             connect(gridButtons[row][col], &QPushButton::clicked, this, &ShipPlacementWindow::handleCellClick);
             ui->gridLayoutField->addWidget(gridButtons[row][col], row, col);
@@ -32,6 +35,8 @@ ShipPlacementWindow::ShipPlacementWindow(QWidget *parent) :
     connect(ui->btnShip3, &QPushButton::clicked, this, &ShipPlacementWindow::selectShip3);
     connect(ui->btnShip4, &QPushButton::clicked, this, &ShipPlacementWindow::selectShip4);
     connect(ui->btnStartBattle, &QPushButton::clicked, this, &ShipPlacementWindow::onStartBattleClicked);
+    connect(ui->btnResetShips, &QPushButton::clicked, this, &ShipPlacementWindow::onResetShipsClicked);
+    connect(ui->btnAutoPlaceShips, &QPushButton::clicked, this, &ShipPlacementWindow::onAutoPlaceShipsClicked);
     connect(ui->btnBackToMainMenu, &QPushButton::clicked, this, &ShipPlacementWindow::onBackClicked);
 
     initializeShipCounts();
@@ -40,6 +45,110 @@ ShipPlacementWindow::ShipPlacementWindow(QWidget *parent) :
 ShipPlacementWindow::~ShipPlacementWindow()
 {
     delete ui;
+}
+
+void ShipPlacementWindow::clearBoard()
+{
+    for (int row = 0; row < 10; ++row) {
+        for (int col = 0; col < 10; ++col) {
+            gridButtons[row][col]->setStyleSheet("background-color: lightblue;");
+            gridButtons[row][col]->setProperty("occupied", false);
+        }
+    }
+    allPlacedShips.clear();
+    resetCurrentPlacement();
+    currentShipSize = 0;
+    initializeShipCounts();
+}
+
+
+void ShipPlacementWindow::onResetShipsClicked()
+{
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle("Сброс кораблей");
+    msgBox.setText("Вы уверены, что хотите удалить все расставленные корабли и начать заново?");
+    msgBox.setIcon(QMessageBox::Question);
+    QPushButton *yesButton = msgBox.addButton(tr("Да"), QMessageBox::ActionRole);
+    QPushButton *noButton = msgBox.addButton(tr("Нет"), QMessageBox::ActionRole);
+    msgBox.setDefaultButton(noButton);
+    msgBox.exec();
+
+    if (msgBox.clickedButton() == yesButton) {
+        clearBoard();
+    }
+}
+
+void ShipPlacementWindow::onAutoPlaceShipsClicked()
+{
+    clearBoard();
+    if (autoPlaceAllShips()) {
+        updateShipCountDisplay();
+        QMessageBox::information(this, "Готово", "Все корабли расставлены автоматически.");
+    } else {
+        QMessageBox::critical(this, "Ошибка", "Не удалось автоматически расставить корабли. Пожалуйста, сбросьте и попробуйте снова.");
+        clearBoard();
+    }
+}
+
+bool ShipPlacementWindow::isValidPlacementForAuto(const QList<QPoint>& ship)
+{
+    for (const QPoint& point : ship) {
+        for (int dr = -1; dr <= 1; ++dr) {
+            for (int dc = -1; dc <= 1; ++dc) {
+                int nr = point.x() + dr;
+                int nc = point.y() + dc;
+
+                if (nr >= 0 && nr < 10 && nc >= 0 && nc < 10) {
+                    if (gridButtons[nr][nc]->property("occupied").toBool()) {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
+bool ShipPlacementWindow::autoPlaceAllShips()
+{
+    const int shipSizes[] = {4, 3, 3, 2, 2, 2, 1, 1, 1, 1};
+    const int maxPlacementTries = 100;
+
+    for (int size : shipSizes) {
+        bool placed = false;
+        for (int tries = 0; tries < maxPlacementTries; ++tries) {
+            bool isVertical = QRandomGenerator::global()->bounded(2);
+            int row = QRandomGenerator::global()->bounded(10);
+            int col = QRandomGenerator::global()->bounded(10);
+
+            QList<QPoint> newShip;
+            bool fitsOnBoard = true;
+            for (int i = 0; i < size; ++i) {
+                int r = isVertical ? row + i : row;
+                int c = isVertical ? col : col + i;
+                if (r >= 10 || c >= 10) {
+                    fitsOnBoard = false;
+                    break;
+                }
+                newShip.append(QPoint(r, c));
+            }
+
+            if (fitsOnBoard && isValidPlacementForAuto(newShip)) {
+                allPlacedShips.append(newShip);
+                shipsPlaced[size]++;
+                for (const QPoint& pt : newShip) {
+                    gridButtons[pt.x()][pt.y()]->setProperty("occupied", true);
+                    gridButtons[pt.x()][pt.y()]->setStyleSheet("background-color: gray;");
+                }
+                placed = true;
+                break;
+            }
+        }
+        if (!placed) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void ShipPlacementWindow::initializeShipCounts()
@@ -53,9 +162,19 @@ void ShipPlacementWindow::initializeShipCounts()
 
 void ShipPlacementWindow::selectShip(int size)
 {
+    if (!currentPlacement.isEmpty()) {
+        resetCurrentPlacement();
+    }
     currentShipSize = size;
-    currentPlacement.clear();
-    QMessageBox::information(this, "Выбор корабля", QString("Вы выбрали %1-палубный корабль").arg(size));
+    currentOrientation = UNKNOWN;
+
+    if (shipsPlaced[currentShipSize] >= maxShips[currentShipSize]) {
+        QMessageBox::information(this, "Лимит достигнут", QString("Вы уже разместили все %1-палубные корабли. Выберите другой тип.").arg(size));
+        currentShipSize = 0;
+        return;
+    }
+
+    QMessageBox::information(this, "Выбор корабля", QString("Вы выбрали %1-палубный корабль. Разместите его на поле.").arg(size));
 }
 
 void ShipPlacementWindow::selectShip1() { selectShip(1); }
@@ -65,110 +184,128 @@ void ShipPlacementWindow::selectShip4() { selectShip(4); }
 
 void ShipPlacementWindow::handleCellClick()
 {
-    if (currentShipSize == 0) return;
+    if (currentShipSize == 0) {
+        QMessageBox::warning(this, "Ошибка", "Сначала выберите тип корабля из панели слева.");
+        return;
+    }
 
     QPushButton* btn = qobject_cast<QPushButton*>(sender());
-    if (!btn) return;
+    if (!btn || btn->property("occupied").toBool()) {
+        return;
+    }
 
     int row = btn->property("row").toInt();
     int col = btn->property("col").toInt();
+    QPoint newPoint(row, col);
 
-    if (!currentPlacement.isEmpty()) {
-        bool valid = false;
-        QPoint last = currentPlacement.last();
+    if (currentPlacement.contains(newPoint)) {
+        return;
+    }
 
-        if ((std::abs(row - last.x()) == 1 && col == last.y()) ||
-            (std::abs(col - last.y()) == 1 && row == last.x())) {
-            valid = true;
+    if (currentPlacement.isEmpty()) {
+        // Первый клик
+    }
+    else if (currentPlacement.size() == 1) {
+        // Второй клик
+        QPoint firstPoint = currentPlacement.first();
+        if (firstPoint.x() == newPoint.x() && std::abs(firstPoint.y() - newPoint.y()) == 1) {
+            currentOrientation = HORIZONTAL;
+        } else if (firstPoint.y() == newPoint.y() && std::abs(firstPoint.x() - newPoint.x()) == 1) {
+            currentOrientation = VERTICAL;
+        } else {
+            QMessageBox::warning(this, "Ошибка", "Корабль должен быть прямой линией. Кликните рядом с первой палубой.");
+            return;
+        }
+    }
+    else {
+        // Третий и последующие клики
+        QPoint startPoint = currentPlacement.first();
+        QPoint endPoint = currentPlacement.last();
+        bool isAdjacentToEnd = false;
+
+        if (currentOrientation == HORIZONTAL) {
+            if (newPoint.x() == startPoint.x() &&
+                (std::abs(newPoint.y() - startPoint.y()) == 1 || std::abs(newPoint.y() - endPoint.y()) == 1)) {
+                isAdjacentToEnd = true;
+            }
+        } else { // VERTICAL
+            // ========================= ИСПРАВЛЕНИЕ ЗДЕСЬ =========================
+            if (newPoint.y() == startPoint.y() &&
+                (std::abs(newPoint.x() - startPoint.x()) == 1 || std::abs(newPoint.x() - endPoint.x()) == 1)) {
+                isAdjacentToEnd = true;
+            }
+            // ===================================================================
         }
 
-        if (!valid) {
-            QMessageBox::warning(this, "Ошибка", "Корабль должен быть непрерывным!");
+        if (!isAdjacentToEnd) {
+            QMessageBox::warning(this, "Ошибка", "Корабль должен быть прямой линией. Продолжайте размещение от одного из концов.");
             return;
         }
     }
 
-    if (btn->property("occupied").toBool()) return;
-
-    currentPlacement.append(QPoint(row, col));
+    currentPlacement.append(newPoint);
     btn->setStyleSheet("background-color: gray;");
-    btn->setProperty("occupied", true);
+
+    std::sort(currentPlacement.begin(), currentPlacement.end(), [](const QPoint &a, const QPoint &b) {
+        return a.x() == b.x() ? a.y() < b.y() : a.x() < b.x();
+    });
 
     if (currentPlacement.size() == currentShipSize) {
-        if (shipsPlaced[currentShipSize] >= maxShips[currentShipSize]) {
-            QMessageBox::warning(this, "Ошибка", "Достигнут лимит кораблей этого типа!");
+        if (isAdjacentToAnotherShip(currentPlacement)) {
+            QMessageBox::warning(this, "Ошибка", "Корабли не могут касаться друг друга.");
             resetCurrentPlacement();
             return;
         }
 
-        if (!isValidShipPlacement(currentPlacement)) {
-            QMessageBox::warning(this, "Ошибка", "Невозможно разместить корабль здесь.");
-            resetCurrentPlacement();
-            return;
+        for(const QPoint& point : currentPlacement) {
+            gridButtons[point.x()][point.y()]->setProperty("occupied", true);
         }
 
         shipsPlaced[currentShipSize]++;
         allPlacedShips.append(currentPlacement);
         updateShipCountDisplay();
         currentPlacement.clear();
+        currentOrientation = UNKNOWN;
+
+        if (shipsPlaced[currentShipSize] >= maxShips[currentShipSize]) {
+            QMessageBox::information(this, "Лимит достигнут", QString("Вы разместили все %1-палубные корабли. Выберите другой тип.").arg(currentShipSize));
+            currentShipSize = 0;
+        } else {
+            int remaining = maxShips[currentShipSize] - shipsPlaced[currentShipSize];
+            QMessageBox::information(this, "Корабль размещен", QString("Отлично! Можете размещать следующий. Осталось: %1").arg(remaining));
+        }
     }
 }
 
 void ShipPlacementWindow::resetCurrentPlacement()
 {
     for (const QPoint& point : currentPlacement) {
-        gridButtons[point.x()][point.y()]->setStyleSheet("background-color: lightblue;");
-        gridButtons[point.x()][point.y()]->setProperty("occupied", false);
+        if (!gridButtons[point.x()][point.y()]->property("occupied").toBool()) {
+            gridButtons[point.x()][point.y()]->setStyleSheet("background-color: lightblue;");
+        }
     }
     currentPlacement.clear();
+    currentOrientation = UNKNOWN;
 }
 
 void ShipPlacementWindow::updateShipCountDisplay()
 {
-    ui->labelShip1Count->setText(QString("1-палубные: %1/4").arg(shipsPlaced[1]));
-    ui->labelShip2Count->setText(QString("2-палубные: %1/3").arg(shipsPlaced[2]));
-    ui->labelShip3Count->setText(QString("3-палубные: %1/2").arg(shipsPlaced[3]));
-    ui->labelShip4Count->setText(QString("4-палубные: %1/1").arg(shipsPlaced[4]));
-}
-
-bool ShipPlacementWindow::isValidShipPlacement(const QList<QPoint>& ship)
-{
-    if (ship.size() == 1) {
-        return !isAdjacentToAnotherShip(ship);
-    }
-    QList<QPoint> sorted = ship;
-    std::sort(sorted.begin(), sorted.end(), [](const QPoint &a, const QPoint &b) {
-        return a.x() == b.x() ? a.y() < b.y() : a.x() < b.x();
-    });
-    bool isVertical = true, isHorizontal = true;
-    int firstRow = sorted[0].x(), firstCol = sorted[0].y();
-    for (int i = 1; i < sorted.size(); ++i) {
-        if (sorted[i].x() != firstRow) isHorizontal = false;
-        if (sorted[i].y() != firstCol) isVertical = false;
-    }
-    if (!isVertical && !isHorizontal) return false;
-    if (isHorizontal) {
-        for (int i = 1; i < sorted.size(); ++i) {
-            if (sorted[i].y() != sorted[i-1].y() + 1) return false;
-        }
-    } else {
-        for (int i = 1; i < sorted.size(); ++i) {
-            if (sorted[i].x() != sorted[i-1].x() + 1) return false;
-        }
-    }
-    return !isAdjacentToAnotherShip(ship);
+    ui->labelShip1Count->setText(QString("1-палубные: %1/%2").arg(shipsPlaced[1]).arg(maxShips[1]));
+    ui->labelShip2Count->setText(QString("2-палубные: %1/%2").arg(shipsPlaced[2]).arg(maxShips[2]));
+    ui->labelShip3Count->setText(QString("3-палубные: %1/%2").arg(shipsPlaced[3]).arg(maxShips[3]));
+    ui->labelShip4Count->setText(QString("4-палубные: %1/%2").arg(shipsPlaced[4]).arg(maxShips[4]));
 }
 
 bool ShipPlacementWindow::isAdjacentToAnotherShip(const QList<QPoint>& ship)
 {
     for (const QPoint& point : ship) {
-        int row = point.x(), col = point.y();
         for (int i = -1; i <= 1; ++i) {
             for (int j = -1; j <= 1; ++j) {
-                int newRow = row + i, newCol = col + j;
+                if (i == 0 && j == 0) continue;
+                int newRow = point.x() + i;
+                int newCol = point.y() + j;
                 if (newRow >= 0 && newRow < 10 && newCol >= 0 && newCol < 10) {
-                    if (gridButtons[newRow][newCol]->property("occupied").toBool() &&
-                        !ship.contains(QPoint(newRow, newCol))) {
+                    if (gridButtons[newRow][newCol]->property("occupied").toBool() && !ship.contains(QPoint(newRow, newCol))) {
                         return true;
                     }
                 }
@@ -185,27 +322,20 @@ void ShipPlacementWindow::onStartBattleClicked()
         return;
     }
 
-    // ИЗМЕНЕНИЕ: Не скрываем окно, а показываем статус ожидания
-    // и блокируем интерфейс, чтобы нельзя было ничего поменять.
-    // Сигнал будет отправлен, а MainWindow решит, когда начинать бой.
-
     ui->btnStartBattle->setEnabled(false);
     ui->btnBackToMainMenu->setEnabled(false);
     ui->groupBox->setEnabled(false);
+    ui->btnResetShips->setEnabled(false);
 
-    // Блокируем поле
     for (int row = 0; row < 10; ++row) {
         for (int col = 0; col < 10; ++col) {
             gridButtons[row][col]->setEnabled(false);
         }
     }
 
-    // Добавляем надпись об ожидании
     QLabel* waitingLabel = new QLabel("Ожидание второго игрока...", this);
     waitingLabel->setStyleSheet("font-size: 18px; color: #d4af37; font-weight: bold; background-color: rgba(0,0,0,0.5); border-radius: 8px; padding: 10px;");
     waitingLabel->setAlignment(Qt::AlignCenter);
-
-    // Позиционируем надпись по центру виджета с кнопками
     int x = ui->groupBox->x();
     int y = ui->groupBox->y() + ui->groupBox->height() + 150;
     int w = ui->groupBox->width();
@@ -214,7 +344,6 @@ void ShipPlacementWindow::onStartBattleClicked()
     waitingLabel->show();
 
     emit startGame(allPlacedShips);
-    // this->hide(); // <-- УБРАЛИ, окно скроет MainWindow, когда оба будут готовы
 }
 
 void ShipPlacementWindow::onBackClicked()

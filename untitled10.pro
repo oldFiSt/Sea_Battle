@@ -16,6 +16,7 @@ linux {
 }
 
 SOURCES += \
+    guidewindow.cpp \
     main.cpp \
     mainwindow.cpp \
     secondwindow.cpp \
@@ -29,6 +30,7 @@ SOURCES += \
     gameclient.cpp
 
 HEADERS += \
+    guidewindow.h \
     mainwindow.h \
     secondwindow.h \
     shipplacementwindow.h \
@@ -41,6 +43,7 @@ HEADERS += \
     gameclient.h
 
 FORMS += \
+    guidewindow.ui \
     mainwindow.ui \
     secondwindow.ui \
     shipplacementwindow.ui \
@@ -50,7 +53,8 @@ FORMS += \
     hostlobbywindow.ui \
     connect_window.ui
 
-RESOURCES += resources.qrc  # если есть иконки и т.п.
+RESOURCES += resources.qrc \  # если есть иконки и т.п.
+    resources.qrc
 
 # Установка для Linux
 unix:!android {

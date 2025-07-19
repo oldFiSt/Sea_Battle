@@ -15,14 +15,23 @@ GameClient::GameClient(QObject *parent)
 
 void GameClient::connectToServer(const QString &host, quint16 port)
 {
-    socket->abort(); // На случай, если подключение уже активно
+    socket->abort();
     socket->connectToHost(host, port);
 }
+
+// <-- НОВАЯ ФУНКЦИЯ -->
+void GameClient::disconnectFromServer()
+{
+    if (socket->state() != QAbstractSocket::UnconnectedState) {
+        socket->abort(); // Принудительно разрывает соединение и сбрасывает сокет
+        qDebug() << "Client connection aborted.";
+    }
+}
+
 
 void GameClient::sendData(const QByteArray &data)
 {
     if (socket->state() == QAbstractSocket::ConnectedState) {
-        // Добавляем символ новой строки для разделения сообщений
         QByteArray newData = data;
         if (!newData.endsWith('\n')) {
             newData.append('\n');
@@ -56,7 +65,6 @@ void GameClient::onSocketError(QAbstractSocket::SocketError socketError)
 void GameClient::onReadyRead() {
     buffer.append(socket->readAll());
 
-    // Разделяем сообщения по символу новой строки
     int pos;
     while ((pos = buffer.indexOf('\n')) != -1) {
         QByteArray message = buffer.left(pos);
