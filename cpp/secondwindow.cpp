@@ -1,7 +1,7 @@
-#include "secondwindow.h"
+#include "../headers/secondwindow.h"
 #include "ui_secondwindow.h"
-#include "battlewindow.h"
-#include "mainwindow.h"
+#include "../headers/battlewindow.h"
+#include "../headers/mainwindow.h"
 
 #include <QMessageBox>
 #include <QPushButton>

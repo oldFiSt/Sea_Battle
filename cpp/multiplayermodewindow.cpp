@@ -1,4 +1,4 @@
-#include "multiplayermodewindow.h"
+#include "../headers/multiplayermodewindow.h"
 #include "ui_multiplayermodewindow.h"
 
 MultiplayerModeWindow::MultiplayerModeWindow(QWidget *parent) :
