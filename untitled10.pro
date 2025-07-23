@@ -10,48 +10,45 @@ linux {
     QMAKE_LFLAGS += -Wl,--as-needed
     LIBS += -lpthread
     PKGCONFIG += libnotify
-
-    # Только если действительно используешь X11 напрямую:
-    # LIBS += -lX11 -lXext
 }
 
 SOURCES += \
-    guidewindow.cpp \
-    main.cpp \
-    mainwindow.cpp \
-    secondwindow.cpp \
-    shipplacementwindow.cpp \
-    battlewindow.cpp \
-    multiplayermodewindow.cpp \
-    hostsetupwindow.cpp \
-    hostlobbywindow.cpp \
-    connect_window.cpp \
-    gameserver.cpp \
-    gameclient.cpp
+    cpp/guidewindow.cpp \
+    cpp/main.cpp \
+    cpp/mainwindow.cpp \
+    cpp/secondwindow.cpp \
+    cpp/shipplacementwindow.cpp \
+    cpp/battlewindow.cpp \
+    cpp/multiplayermodewindow.cpp \
+    cpp/hostsetupwindow.cpp \
+    cpp/hostlobbywindow.cpp \
+    cpp/connect_window.cpp \
+    cpp/gameserver.cpp \
+    cpp/gameclient.cpp
 
 HEADERS += \
-    guidewindow.h \
-    mainwindow.h \
-    secondwindow.h \
-    shipplacementwindow.h \
-    battlewindow.h \
-    multiplayermodewindow.h \
-    hostsetupwindow.h \
-    hostlobbywindow.h \
-    connect_window.h \
-    gameserver.h \
-    gameclient.h
+    headers/guidewindow.h \
+    headers/mainwindow.h \
+    headers/secondwindow.h \
+    headers/shipplacementwindow.h \
+    headers/battlewindow.h \
+    headers/multiplayermodewindow.h \
+    headers/hostsetupwindow.h \
+    headers/hostlobbywindow.h \
+    headers/connect_window.h \
+    headers/gameserver.h \
+    headers/gameclient.h
 
 FORMS += \
-    guidewindow.ui \
-    mainwindow.ui \
-    secondwindow.ui \
-    shipplacementwindow.ui \
-    battlewindow.ui \
-    multiplayermodewindow.ui \
-    hostsetupwindow.ui \
-    hostlobbywindow.ui \
-    connect_window.ui
+    design/guidewindow.ui \
+    design/mainwindow.ui \
+    design/secondwindow.ui \
+    design/shipplacementwindow.ui \
+    design/battlewindow.ui \
+    design/multiplayermodewindow.ui \
+    design/hostsetupwindow.ui \
+    design/hostlobbywindow.ui \
+    design/connect_window.ui
 
 RESOURCES += resources.qrc \  # если есть иконки и т.п.
     resources.qrc
