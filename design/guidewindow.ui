@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>GuideWindow</class>
+ <widget class="QDialog" name="GuideWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>826</width>
+    <height>619</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Руководство пользователя</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+QDialog {
+    background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                                    stop:0 #0a2463, stop:1 #3e92cc);
+    border: 3px solid #1e3d6b;
+}
+
+QPushButton {
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                    stop:0 #c62828, stop:1 #b71c1c);
+    border: 2px solid #e57373;
+    border-radius: 15px;
+    padding: 12px 24px;
+    font-family: &quot;Arial Rounded MT Bold&quot;;
+    font-size: 18px;
+    color: #f8f8ff;
+    min-width: 200px;
+    min-height: 50px;
+}
+
+QPushButton:hover {
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                    stop:0 #ef5350, stop:1 #e53935);
+}
+
+QTextBrowser {
+    background-color: rgba(10, 36, 99, 0.8);
+    border: 2px solid #d4af37;
+    border-radius: 10px;
+    color: #f8f8ff;
+    font-family: &quot;Arial&quot;;
+    font-size: 14px;
+    padding: 10px;
+}
+   </string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QTextBrowser" name="textBrowser"/>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnClose">
+       <property name="text">
+        <string>Закрыть</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
